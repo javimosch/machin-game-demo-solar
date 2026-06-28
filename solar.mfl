@@ -1,0 +1,68 @@
+type Vec3 struct{x float y float z float}
+
+func v3(x,y,z)(v){v=Vec3{x,y,z}}
+
+func v3_add(a,b)(r){r=v3(a.x+b.x,a.y+b.y,a.z+b.z)}
+
+func v3_sub(a,b)(r){r=v3(a.x-b.x,a.y-b.y,a.z-b.z)}
+
+func v3_scale(a,s)(r){r=v3(a.x*s,a.y*s,a.z*s)}
+
+func v3_dot(a,b)(d){d=a.x*b.x+a.y*b.y+a.z*b.z}
+
+func v3_cross(a,b)(r){r=v3(a.y*b.z-a.z*b.y,a.z*b.x-a.x*b.z,a.x*b.y-a.y*b.x)}
+
+func v3_len(a)(l){l=sqrt(a.x*a.x+a.y*a.y+a.z*a.z)}
+
+func v3_len_sq(a)(d){d=a.x*a.x+a.y*a.y+a.z*a.z}
+
+func v3_norm(a)(r){l:=v3_len(a)+0.0000001  r=v3_scale(a,1.0/l)}
+
+func v3_lerp(a,b,t)(r){r=v3(a.x+(b.x-a.x)*t,a.y+(b.y-a.y)*t,a.z+(b.z-a.z)*t)}
+
+func v3_dist(a,b)(d){d=v3_len(v3_sub(a,b))}
+
+extern "raylib"{header "raylib.h" link "raylib" link "GL" link "m" link "pthread" link "dl" link "rt" link "X11" cstruct Color{r u8 g u8 b u8 a u8}cstruct Vector2{x f32 y f32}cstruct Vector3{x f32 y f32 z f32}cstruct Camera3D{position Vector3 target Vector3 up Vector3 fovy f32 projection i32}cstruct Model{}cstruct Mesh{vertexCount i32 triangleCount i32 vertices ptr normals ptr colors ptr vaoId u32 vboId ptr}fn InitWindow(i32,i32,string)fn SetTargetFPS(i32)fn WindowShouldClose()bool fn BeginDrawing()fn EndDrawing()fn ClearBackground(Color)fn BeginMode3D(Camera3D)fn EndMode3D()fn UploadMesh(Mesh*,bool)fn LoadModelFromMesh(Mesh)Model fn DrawModelEx(Model,Vector3,Vector3,f32,Vector3,Color)fn DrawModel(Model,Vector3,f32,Color)fn DrawText(string,i32,i32,i32,Color)fn DisableCursor()fn EnableCursor()fn IsKeyDown(i32)bool fn GetMouseDelta()Vector2 fn GetFrameTime()f32 fn CloseWindow()}
+
+func col(r,g,b)(c){c=Color{r,g,b,255}}
+
+func col_a(r,g,b,a)(c){c=Color{r,g,b,a}}
+
+func rlv(v)(o){o=Vector3{v.x,v.y,v.z}}
+
+func rlv2(v)(o){o=Vector2{v.x,v.y}}
+
+func clampf(v,lo,hi)(o){o=v if o<lo{o=lo}if o>hi{o=hi}}
+
+func lerpf(a,b,t)(r){r=a+(b-a)*t}
+
+func make_sphere(rings,sectors,rad,seedf)(model){rng:=rings sec:=sectors vcount:=rng*sec*6 vbuf:=alloc(vcount*12)nbuf:=alloc(vcount*12)cbuf:=alloc(vcount*4)vi:=0 j:=0 while j<rng{i:=0 while i<sec{lat0:=pi()*(float(j)/float(rng)-0.5)lat1:=pi()*(float(j+1)/float(rng)-0.5)lon0:=2.0*pi()*float(i)/float(sec)lon1:=2.0*pi()*float(i+1)/float(sec)ax:=rad*cos(lat0)*cos(lon0)ay:=rad*sin(lat0)az:=rad*cos(lat0)*sin(lon0)bx:=rad*cos(lat0)*cos(lon1)by:=rad*sin(lat0)bz:=rad*cos(lat0)*sin(lon1)cx:=rad*cos(lat1)*cos(lon1)cy:=rad*sin(lat1)cz:=rad*cos(lat1)*sin(lon1)dx:=rad*cos(lat1)*cos(lon0)dy:=rad*sin(lat1)dz:=rad*cos(lat1)*sin(lon0)an:=v3_norm(v3(ax,ay,az))bn:=v3_norm(v3(bx,by,bz))cn:=v3_norm(v3(cx,cy,cz))dn:=v3_norm(v3(dx,dy,dz))ar,ag,ab:=planet_color(ax/rad,ay/rad,az/rad,seedf)br,bg,bb:=planet_color(bx/rad,by/rad,bz/rad,seedf)cr,cg,cb:=planet_color(cx/rad,cy/rad,cz/rad,seedf)dr,dg,db:=planet_color(dx/rad,dy/rad,dz/rad,seedf)vi=put_vert(vbuf,nbuf,cbuf,vi,ax,ay,az,an.x,an.y,an.z,ar,ag,ab)vi=put_vert(vbuf,nbuf,cbuf,vi,bx,by,bz,bn.x,bn.y,bn.z,br,bg,bb)vi=put_vert(vbuf,nbuf,cbuf,vi,cx,cy,cz,cn.x,cn.y,cn.z,cr,cg,cb)vi=put_vert(vbuf,nbuf,cbuf,vi,ax,ay,az,an.x,an.y,an.z,ar,ag,ab)vi=put_vert(vbuf,nbuf,cbuf,vi,cx,cy,cz,cn.x,cn.y,cn.z,cr,cg,cb)vi=put_vert(vbuf,nbuf,cbuf,vi,dx,dy,dz,dn.x,dn.y,dn.z,dr,dg,db)i=i+1}j=j+1}mesh:=Mesh{vcount,vcount/3,vbuf,nbuf,cbuf,0,0}UploadMesh(mesh,false)model=LoadModelFromMesh(mesh)}
+
+func put_vert(vbuf,nbuf,cbuf,vi,vx,vy,vz,nx,ny,nz,r,g,b)(nvi){off:=vi*12 poke_f32(vbuf,off,vx)poke_f32(vbuf,off+4,vy)poke_f32(vbuf,off+8,vz)poke_f32(nbuf,off,nx)poke_f32(nbuf,off+4,ny)poke_f32(nbuf,off+8,nz)co:=vi*4 poke_u8(cbuf,co,r)poke_u8(cbuf,co+1,g)poke_u8(cbuf,co+2,b)poke_u8(cbuf,co+3,255)nvi=vi+1}
+
+func planet_color(nx,ny,nz,seedf)(r,g,b){s:=2.7 n:=noise3(nx*s+seedf,ny*s+0.3,nz*s)n=n*1.3 br:=140.0 bg:=125.0 bb:=100.0 br=br+n*55.0 bg=bg+n*50.0 bb=bb+n*40.0 band:=sin(ny*7.0+noise3(nx*0.7,0.0,nz*0.7+seedf*0.5)*2.5)if band>0.5{br=br+30.0 bg=bg+20.0 bb=bb+10.0}if band<0.0-0.5{br=br-20.0 bg=bg-15.0 bb=bb+30.0}if ny>0.75{br=210.0+n*20.0 bg=220.0+n*20.0 bb=240.0+n*15.0}if ny<0.0-0.75{br=210.0+n*20.0 bg=220.0+n*20.0 bb=240.0+n*15.0}r=int(clampf(br,20.0,254.0))g=int(clampf(bg,20.0,254.0))b=int(clampf(bb,20.0,254.0))}
+
+func sun_color(nx,ny,nz)(r,g,b){n:=noise3(nx*3.0,ny*3.0,nz*3.0)br:=255.0 bg:=220.0+n*35.0 bb:=60.0+n*30.0 r=int(clampf(br,0.0,255.0))g=int(clampf(bg,0.0,255.0))b=int(clampf(bb,0.0,255.0))}
+
+type Body struct{orbit float speed float angle float rad   float}
+
+func make_body(rings,sectors,rad,orbit,speed,seedf)(b,m){m=make_sphere(rings,sectors,rad,seedf)b=Body{orbit,speed,0.0,rad}}
+
+func step_body(b,dt)(nb){nb=b nb.angle=b.angle+b.speed*dt if nb.angle>2.0*pi(){nb.angle=nb.angle-2.0*pi()}}
+
+func body_pos(b)(p){p=v3(b.orbit*cos(b.angle),0.0,b.orbit*sin(b.angle))}
+
+type FlyCam struct{pos   Vec3 yaw   float pitch float}
+
+func fc_new()(c){c=FlyCam{v3(0.0,8.0,28.0),0.0,0.25}}
+
+func fc_forward(c)(f){f=v3(cos(c.pitch)*sin(c.yaw),sin(c.pitch)*-1.0,cos(c.pitch)*cos(c.yaw))}
+
+func fc_right(c)(f){f=v3(cos(c.yaw),0.0,sin(c.yaw)*-1.0)}
+
+func fc_update(c,dt,keys)(nc){nc=c md:=GetMouseDelta()sens:=0.004 nc.yaw=c.yaw+md.x*sens nc.pitch=c.pitch+md.y*sens if nc.pitch>1.4{nc.pitch=1.4}if nc.pitch<0.0-1.4{nc.pitch=0.0-1.4}spd:=14.0*dt fwd:=fc_forward(nc)rit:=fc_right(nc)up:=v3(0.0,1.0,0.0)if IsKeyDown(87){nc.pos=v3_add(nc.pos,v3_scale(fwd,spd))}if IsKeyDown(83){nc.pos=v3_sub(nc.pos,v3_scale(fwd,spd))}if IsKeyDown(65){nc.pos=v3_sub(nc.pos,v3_scale(rit,spd))}if IsKeyDown(68){nc.pos=v3_add(nc.pos,v3_scale(rit,spd))}if IsKeyDown(81){nc.pos=v3_sub(nc.pos,v3_scale(up,spd))}if IsKeyDown(69){nc.pos=v3_add(nc.pos,v3_scale(up,spd))}if IsKeyDown(340){spd=spd*3.0}if IsKeyDown(82){nc=FlyCam{v3(0.0,8.0,28.0),0.0,0.25}}}
+
+func fc_camera(c)(cam){fwd:=fc_forward(c)tgt:=v3_add(c.pos,fwd)cam=Camera3D{rlv(c.pos),rlv(tgt),Vector3{0.0,1.0,0.0},55.0,0}}
+
+func main(){InitWindow(1100,720,"machin — solar system")SetTargetFPS(0)DisableCursor()sun_b,sun_model:=make_body(24,24,2.5,0.0,0.0,0.0)bodies:=[]Body{}models:=[]Model{}b1,m1:=make_body(14,14,0.35,6.5,1.4,1.7)bodies=append(bodies,b1)models=append(models,m1)b2,m2:=make_body(16,16,0.75,10.0,1.0,3.9)bodies=append(bodies,b2)models=append(models,m2)b3,m3:=make_body(16,16,0.72,14.0,0.72,0.5)bodies=append(bodies,b3)models=append(models,m3)b4,m4:=make_body(14,14,0.48,18.5,0.54,5.2)bodies=append(bodies,b4)models=append(models,m4)b5,m5:=make_body(22,22,2.4,26.0,0.32,1.1)bodies=append(bodies,b5)models=append(models,m5)b6,m6:=make_body(20,20,1.9,34.0,0.23,4.3)bodies=append(bodies,b6)models=append(models,m6)b7,m7:=make_body(12,12,0.55,8.5,1.15,2.2)bodies=append(bodies,b7)models=append(models,m7)nb:=len(bodies)cam:=fc_new()last:=now_ms()sim:=0.0 fix:=0.016666 while WindowShouldClose()==false{nowt:=now_ms()dt:=float(nowt-last)/1000.0 last=nowt if dt>0.1{dt=0.016666}sim=sim+dt steps:=0 while sim>=fix{k:=0 while k<nb{bodies[k]=step_body(bodies[k],fix)k=k+1}sim=sim-fix steps=steps+1 if steps>8{sim=0.0  break}}cam=fc_update(cam,dt,0)BeginDrawing()ClearBackground(col(5,6,18))BeginMode3D(fc_camera(cam))DrawModel(sun_model,Vector3{0.0,0.0,0.0},1.0,col(255,230,100))k:=0 while k<nb{p:=body_pos(bodies[k])DrawModelEx(models[k],rlv(p),Vector3{0.0,1.0,0.0},bodies[k].angle*57.3,Vector3{1.0,1.0,1.0},col(255,255,255))k=k+1}EndMode3D()DrawText("machin — solar system",16,12,22,col(235,238,248))DrawText("WASD fly · mouse look · Q/E up/down · R reset",16,40,14,col(140,150,175))sp:="sim dt "+str(int(fix*1000.0))+"ms  |  "+str(nb)+" bodies" DrawText(sp,16,58,13,col(110,120,145))EndDrawing()}EnableCursor()CloseWindow()}
+
